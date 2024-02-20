@@ -3,5 +3,9 @@ package study.alarmservice.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import study.alarmservice.domain.User;
 
-public interface UserRepository extends JpaRepository<User, Long> {
+import java.util.Optional;
+
+public interface UserRepository extends JpaRepository<User, Long>, UserRepositoryCustom {
+
+    Optional<User> findByEmail(String email);
 }
