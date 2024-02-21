@@ -20,8 +20,8 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom {
     public List<User> findUsers(UserSearchDto userSearchDto) {
         return query
                 .selectFrom(user)
-                .limit(getLimit(userSearchDto))
-                .offset(userSearchDto.getOffset(getPage(userSearchDto), getLimit(userSearchDto)))
+                .limit(userSearchDto.getLimit(userSearchDto.getSize()))
+                .offset(userSearchDto.getOffset(userSearchDto.getPage(), userSearchDto.getSize()))
                 .orderBy(user.id.desc())
                 .fetch();
     }
@@ -36,11 +36,4 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom {
         return Optional.ofNullable(count).orElse(0L).intValue();
     }
 
-    private static int getPage(UserSearchDto userSearchDto) {
-        return Math.max(userSearchDto.getPage(), 1);
-    }
-
-    private static int getLimit(UserSearchDto userSearchDto) {
-        return Math.max(userSearchDto.getSize(), 10);
-    }
 }

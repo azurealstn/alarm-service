@@ -480,11 +480,16 @@ class UserApiControllerTest {
 
         userRepository.saveAll(users);
 
+        UserSearchDto userSearchDto = UserSearchDto.builder()
+                .page(2)
+                .size(20)
+                .build();
+
         // expected
         mockMvc.perform(get("/api/v1/users")
                         .contentType(APPLICATION_FORM_URLENCODED_VALUE)
-                        .param("page", "2")
-                        .param("size", "20"))
+                        .param("page", String.valueOf(userSearchDto.getPage()))
+                        .param("size", String.valueOf(userSearchDto.getSize())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.users.length()", is(20)))
                 .andExpect(jsonPath("$.users[0].email").value("abcde90@gmail.com"))
@@ -496,6 +501,42 @@ class UserApiControllerTest {
                 .andExpect(jsonPath("$.paging.totalPageCount").value(6))
                 .andExpect(jsonPath("$.paging.startPage").value(1))
                 .andExpect(jsonPath("$.paging.endPage").value(6))
+                .andDo(print());
+    }
+
+    @Test
+    @DisplayName("회원 리스트 조회 마지막 페이지 - page 파라미터만 넘겼을 경우")
+    void get_users_with_paging_3() throws Exception {
+        // given
+        List<User> users = IntStream.range(1, 111)
+                .mapToObj(i -> User.builder()
+                        .email("abcde" + i + "@gmail.com")
+                        .password("12345")
+                        .role(Role.GUEST)
+                        .build())
+                .collect(Collectors.toList());
+
+        userRepository.saveAll(users);
+
+        UserSearchDto userSearchDto = UserSearchDto.builder()
+                .page(11)
+                .build();
+
+        // expected
+        mockMvc.perform(get("/api/v1/users")
+                        .contentType(APPLICATION_FORM_URLENCODED_VALUE)
+                        .param("page", String.valueOf(userSearchDto.getPage())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.users.length()", is(10)))
+                .andExpect(jsonPath("$.users[0].email").value("abcde10@gmail.com"))
+                .andExpect(jsonPath("$.paging.page").value(11))
+                .andExpect(jsonPath("$.paging.size").value(10))
+                .andExpect(jsonPath("$.paging.pageCount").value(10))
+                .andExpect(jsonPath("$.paging.prev").value(true))
+                .andExpect(jsonPath("$.paging.next").value(false))
+                .andExpect(jsonPath("$.paging.totalPageCount").value(11))
+                .andExpect(jsonPath("$.paging.startPage").value(11))
+                .andExpect(jsonPath("$.paging.endPage").value(11))
                 .andDo(print());
     }
 }

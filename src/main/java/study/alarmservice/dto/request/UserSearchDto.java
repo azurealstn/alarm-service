@@ -10,14 +10,11 @@ import lombok.Setter;
 @Getter
 public class UserSearchDto extends PagingRequest {
 
-    private int page;
-    private int size;
     private String searchEmail;
 
     @Builder
     public UserSearchDto(int page, int size) {
-        this.page = page;
-        this.size = size;
+        super(page, size);
     }
 
 }

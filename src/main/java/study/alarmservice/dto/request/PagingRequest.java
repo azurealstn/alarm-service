@@ -26,16 +26,6 @@ public class PagingRequest {
         this.size = size == 0 ? 10 : size;
     }
 
-    public PagingRequest(int page, int size, int totalRowCount) {
-        this(page, size);
-        this.totalRowCount = totalRowCount;
-        this.totalPageCount = ((totalRowCount - 1) / size) + 1;
-        this.endPage = Math.min((((page - 1) / pageCount) + 1) * pageCount, totalPageCount);
-        this.startPage = ((page - 1) / pageCount) * pageCount + 1;
-        this.prev = startPage != 1;
-        this.next = endPage != totalPageCount;
-    }
-
     public PagingRequest(int page, int size, int totalRowCount, int pageCount) {
         this(page, size);
         this.totalRowCount = totalRowCount;
@@ -47,8 +37,26 @@ public class PagingRequest {
         this.next = endPage != totalPageCount;
     }
 
+    /**
+     * 필수 파라미터:
+     * - page
+     * - size
+     * - totalRowCount
+     */
     public static PagingRequest of(int page, int size, int totalRowCount, int pageCount) {
         return new PagingRequest(page, size, totalRowCount, pageCount);
+    }
+
+    /**
+     * @ModelAttribute로 바인딩하기 위해
+     * page와 size만 setter를 열어둔다.
+     */
+    public void setPage(int page) {
+        this.page = page;
+    }
+
+    public void setSize(int size) {
+        this.size = size;
     }
 
     /**
@@ -57,7 +65,16 @@ public class PagingRequest {
      * @return int
      */
     public int getOffset(int page, int size) {
-        return (page - 1) * size;
+        return (Math.max(page, 1) - 1) * Math.max(size, 10);
+    }
+
+    /**
+     * limit 계산
+     * @param size
+     * @return int
+     */
+    public int getLimit(int size) {
+        return Math.max(size, 10);
     }
 
 }
