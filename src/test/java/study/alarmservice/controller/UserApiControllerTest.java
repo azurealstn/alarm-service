@@ -19,6 +19,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.servlet.i18n.CookieLocaleResolver;
 import study.alarmservice.domain.Role;
 import study.alarmservice.domain.User;
 import study.alarmservice.dto.request.UserCreateRequestDto;
@@ -538,5 +539,75 @@ class UserApiControllerTest {
                 .andExpect(jsonPath("$.paging.startPage").value(11))
                 .andExpect(jsonPath("$.paging.endPage").value(11))
                 .andDo(print());
+    }
+
+    @Test
+    @DisplayName("다국어 쿠키값 확인 국문")
+    void i18n_1() throws Exception {
+        // given
+        String email = "azurealstn33@gmail.com";
+        String password = "abcd1234!";
+
+        UserCreateRequestDto requestDto = UserCreateRequestDto.builder()
+                .email(email)
+                .password(password)
+                .build();
+
+        Long savedId = userService.join(requestDto);
+
+        String cookieHeaderValue = CookieLocaleResolver.DEFAULT_COOKIE_NAME + "=ko";
+
+        // expected
+        mockMvc.perform(get("/api/v1/users/{userId}?lang=ko", savedId + 1L))
+                .andExpect(status().isNotFound())
+                .andExpect(header().string("Set-Cookie", containsString(cookieHeaderValue)))
+                .andDo(print());
+
+    }
+
+    @Test
+    @DisplayName("다국어 쿠키값 확인 영문")
+    void i18n_2() throws Exception {
+        // given
+        String email = "azurealstn33@gmail.com";
+        String password = "abcd1234!";
+
+        UserCreateRequestDto requestDto = UserCreateRequestDto.builder()
+                .email(email)
+                .password(password)
+                .build();
+
+        Long savedId = userService.join(requestDto);
+
+        String cookieHeaderValue = CookieLocaleResolver.DEFAULT_COOKIE_NAME + "=en";
+
+        // expected
+        mockMvc.perform(get("/api/v1/users/{userId}?lang=en", savedId + 1L))
+                .andExpect(status().isNotFound())
+                .andExpect(header().string("Set-Cookie", containsString(cookieHeaderValue)))
+                .andDo(print());
+
+    }
+
+    @Test
+    @DisplayName("다국어 쿠키값 확인 - lang 파라미터를 넘기지 않으면 비어있음")
+    void i18n_3() throws Exception {
+        // given
+        String email = "azurealstn33@gmail.com";
+        String password = "abcd1234!";
+
+        UserCreateRequestDto requestDto = UserCreateRequestDto.builder()
+                .email(email)
+                .password(password)
+                .build();
+
+        Long savedId = userService.join(requestDto);
+
+        // expected
+        mockMvc.perform(get("/api/v1/users/{userId}", savedId + 1L))
+                .andExpect(status().isNotFound())
+                .andExpect(header().doesNotExist("Set-Cookie"))
+                .andDo(print());
+
     }
 }
