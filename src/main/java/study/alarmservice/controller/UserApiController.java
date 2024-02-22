@@ -1,10 +1,13 @@
 package study.alarmservice.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import study.alarmservice.domain.User;
+import study.alarmservice.dto.request.LoginRequestDto;
 import study.alarmservice.dto.request.UserCreateRequestDto;
 import study.alarmservice.dto.request.UserSearchDto;
 import study.alarmservice.dto.response.UserPageResponseDto;
@@ -33,5 +36,15 @@ public class UserApiController {
     @GetMapping("/users")
     public UserPageResponseDto findAll(@ModelAttribute("userSearchDto") UserSearchDto userSearchDto) {
         return userService.findAll(userSearchDto);
+    }
+
+    @PostMapping("/login")
+    public UserResponseDto login(@Valid @RequestBody LoginRequestDto requestDto, HttpServletRequest request) {
+        return userService.login(requestDto, request);
+    }
+
+    @PostMapping("/logout")
+    public void logout(HttpServletRequest request) {
+        userService.logout(request);
     }
 }

@@ -13,6 +13,7 @@ import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.i18n.CookieLocaleResolver;
 import study.alarmservice.domain.Role;
 import study.alarmservice.domain.User;
+import study.alarmservice.dto.request.LoginRequestDto;
 import study.alarmservice.dto.request.UserCreateRequestDto;
 import study.alarmservice.dto.request.UserSearchDto;
 import study.alarmservice.repository.UserRepository;
@@ -609,5 +611,125 @@ class UserApiControllerTest {
                 .andExpect(header().doesNotExist("Set-Cookie"))
                 .andDo(print());
 
+    }
+
+    @Test
+    @DisplayName("로그인 인증 성공")
+    void login_success() throws Exception {
+        // given
+        String email = "azurealstn33@gmail.com";
+        String password = "abcd1234!";
+
+        UserCreateRequestDto requestDto = UserCreateRequestDto.builder()
+                .email(email)
+                .password(password)
+                .build();
+
+        Long savedId = userService.join(requestDto);
+
+        LoginRequestDto loginRequestDto = LoginRequestDto.builder()
+                .email(email)
+                .password(password)
+                .build();
+        String content = objectMapper.writeValueAsString(loginRequestDto);
+
+        // expected
+        mockMvc.perform(post("/api/v1/login")
+                        .contentType(APPLICATION_JSON)
+                        .content(content))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId").value(savedId))
+                .andExpect(jsonPath("$.email").value(email))
+                .andDo(print());
+    }
+
+    @Test
+    @DisplayName("로그인 인증 실패 - 이메일")
+    void login_fail_1() throws Exception {
+        // given
+        String email = "azurealstn33@gmail.com";
+        String password = "abcd1234!";
+
+        UserCreateRequestDto requestDto = UserCreateRequestDto.builder()
+                .email(email)
+                .password(password)
+                .build();
+
+        Long savedId = userService.join(requestDto);
+
+        LoginRequestDto loginRequestDto = LoginRequestDto.builder()
+                .email("azurealstn@gmail.com")
+                .password(password)
+                .build();
+
+        String content = objectMapper.writeValueAsString(loginRequestDto);
+
+        // expected
+        mockMvc.perform(post("/api/v1/login")
+                        .contentType(APPLICATION_JSON)
+                        .content(content))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value(404))
+                .andExpect(jsonPath("$.message").value(messageSource.getMessage("user.notFound", null, Locale.KOREA)))
+                .andDo(print());
+    }
+
+    @Test
+    @DisplayName("로그인 인증 실패 - 비밀번호")
+    void login_fail_2() throws Exception {
+        // given
+        String email = "azurealstn33@gmail.com";
+        String password = "abcd1234!";
+
+        UserCreateRequestDto requestDto = UserCreateRequestDto.builder()
+                .email(email)
+                .password(password)
+                .build();
+
+        Long savedId = userService.join(requestDto);
+
+        LoginRequestDto loginRequestDto = LoginRequestDto.builder()
+                .email(email)
+                .password("abcde12345!")
+                .build();
+
+        String content = objectMapper.writeValueAsString(loginRequestDto);
+
+        // expected
+        mockMvc.perform(post("/api/v1/login")
+                        .contentType(APPLICATION_JSON)
+                        .content(content))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value(401))
+                .andExpect(jsonPath("$.message").value(messageSource.getMessage("login.fail", null, Locale.KOREA)))
+                .andDo(print());
+    }
+
+    @Test
+    @DisplayName("로그아웃")
+    void logout() throws Exception {
+        // given
+        String email = "azurealstn33@gmail.com";
+        String password = "abcd1234!";
+
+        UserCreateRequestDto requestDto = UserCreateRequestDto.builder()
+                .email(email)
+                .password(password)
+                .build();
+
+        Long savedId = userService.join(requestDto);
+
+        LoginRequestDto loginRequestDto = LoginRequestDto.builder()
+                .email(email)
+                .password(password)
+                .build();
+
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        userService.login(loginRequestDto, request);
+
+        // expected
+        mockMvc.perform(post("/api/v1/logout"))
+                .andExpect(status().isOk())
+                .andDo(print());
     }
 }

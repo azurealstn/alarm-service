@@ -1,5 +1,7 @@
 package study.alarmservice.service;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.MessageSource;
@@ -9,13 +11,16 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
+import study.alarmservice.constant.SessionConst;
 import study.alarmservice.domain.User;
+import study.alarmservice.dto.request.LoginRequestDto;
 import study.alarmservice.dto.request.PagingRequest;
 import study.alarmservice.dto.request.UserCreateRequestDto;
 import study.alarmservice.dto.request.UserSearchDto;
 import study.alarmservice.dto.response.UserPageResponseDto;
 import study.alarmservice.dto.response.UserResponseDto;
 import study.alarmservice.exception.EmailDuplicateException;
+import study.alarmservice.exception.LoginFailException;
 import study.alarmservice.exception.UserNotFoundException;
 import study.alarmservice.repository.UserRepository;
 
@@ -73,5 +78,28 @@ public class UserService {
                 .build();
 
         return userPageResponseDto;
+    }
+
+    @Transactional
+    public UserResponseDto login(LoginRequestDto requestDto, HttpServletRequest request) {
+        User user = userRepository.findByEmail(requestDto.getEmail())
+                .orElseThrow(() -> new UserNotFoundException(messageSource.getMessage("user.notFound", null, LocaleContextHolder.getLocale())));
+
+        if (passwordEncoder.matches(requestDto.getPassword(), user.getPassword())) {
+            // 세션이 있으면 기존 세션을 반환한다.
+            // 세션이 없으면 새로운 세션을 생성해서 반환한다.
+            HttpSession session = request.getSession();
+            session.setAttribute(SessionConst.LOGIN_USER, user);
+            return new UserResponseDto(user);
+        }
+        throw new LoginFailException(messageSource.getMessage("login.fail", null, LocaleContextHolder.getLocale()));
+    }
+
+    @Transactional
+    public void logout(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.invalidate();
+        }
     }
 }
